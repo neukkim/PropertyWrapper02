@@ -29,12 +29,14 @@ struct Forum: View {
     @State private var list: [Post] = Post.list
     @State private var showAddView: Bool = false
     
+    @StateObject var postVM = PostViewModel()
+    
     var body: some View {
         ScrollView {
             LazyVStack {
                 ForEach(list) { post in
                     NavigationLink {
-                        PostDetail(post: post)
+                        PostDetail(post: post, postVM: postVm)
                     } label: {
                         PostRow(post: post)
                     }
@@ -55,17 +57,16 @@ struct Forum: View {
             .padding()
         }
         .sheet(isPresented: $showAddView) {
-            PostAdd { post in
-                list.insert(post, at:0)
-            }
+            PostAdd(postVm: postVM)
         }
     }
 }
 
 struct PostDetail: View {
     @State private var showEditView: Bool = false
-    
     let post: Post
+    
+    @ObservedObject var postVM: PostViewModel
     
     var body: some View {
         VStack(spacing: 20) {
@@ -79,20 +80,20 @@ struct PostDetail: View {
                 Text("수정")
             }
             .sheet(isPresented: $showEditView) {
-                
+                PostAdd(postVm: postVM)
             }
         }
     }
 }
 
-//class PostViewModel: ObservableObject {
-//    @Published var list: [Post] = Post.list
-//    
-//    func addPost(Text: String) {
-//        let newPost = Post(username: "유저이름", content: text)
-//        list.insert(newPost, at: 0)
-//    }
-//}
+class PostViewModel: ObservableObject {
+    @Published var list: [Post] = Post.list
+    
+    func addPost(text: String) {
+        let newPost = Post(username: "유저이름", content: text)
+        list.insert(newPost, at: 0)
+    }
+}
 
 struct PostAdd: View {
     @FocusState private var focused: Bool
@@ -101,8 +102,7 @@ struct PostAdd: View {
     @Environment(\.dismiss) private var dismiss
     @State private var text: String = ""
     
-    //아래 추가 공부 필요
-    let action: (_ post: Post) -> ()
+    @ObservedObject var postVm: PostViewModel
     
     
     var body: some View {
@@ -125,8 +125,7 @@ struct PostAdd: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("게시") {
-                        let newPost = Post(username: "유저이름", content: text)
-                        action(newPost)
+                        postVm.addPost(text: text)
                         dismiss()
                     }
                 }
