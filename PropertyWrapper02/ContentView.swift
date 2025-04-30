@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject var postVM = PostViewModel()
+    
     var body: some View {
         NavigationView {
             TabView {
@@ -22,6 +24,7 @@ struct ContentView: View {
             }
             .navigationTitle("M 스터디 방")
         }
+        .environmentObject(postVM)
     }
 }
 
@@ -29,14 +32,14 @@ struct Forum: View {
     @State private var list: [Post] = Post.list
     @State private var showAddView: Bool = false
     
-    @StateObject var postVM = PostViewModel()
+    @EnvironmentObject var postVM: PostViewModel
     
     var body: some View {
         ScrollView {
             LazyVStack {
                 ForEach(list) { post in
                     NavigationLink {
-                        PostDetail(post: post, postVM: postVm)
+                        PostDetail(post: post)
                     } label: {
                         PostRow(post: post)
                     }
@@ -57,7 +60,7 @@ struct Forum: View {
             .padding()
         }
         .sheet(isPresented: $showAddView) {
-            PostAdd(postVm: postVM)
+            PostAdd()
         }
     }
 }
@@ -65,8 +68,6 @@ struct Forum: View {
 struct PostDetail: View {
     @State private var showEditView: Bool = false
     let post: Post
-    
-    @ObservedObject var postVM: PostViewModel
     
     var body: some View {
         VStack(spacing: 20) {
@@ -79,8 +80,8 @@ struct PostDetail: View {
                 Image(systemName: "pencil")
                 Text("수정")
             }
-            .sheet(isPresented: $showEditView) {
-                PostAdd(postVm: postVM)
+            .fullScreenCover(isPresented: $showEditView) {
+                PostAdd(post: post)
             }
         }
     }
@@ -100,10 +101,14 @@ struct PostAdd: View {
     
     //아래 추가 공부 필요
     @Environment(\.dismiss) private var dismiss
-    @State private var text: String = ""
+    @State private var text: String
     
-    @ObservedObject var postVm: PostViewModel
+    @EnvironmentObject var postVm: PostViewModel
     
+    init(post: Post? = nil) {
+        _text = State(wrappedValue: post?.content ?? "")
+    }
+    //위 24:50 참조
     
     var body: some View {
         NavigationView {
